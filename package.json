@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "clean": "hardhat clean",
-    "build": "hardhat compile",
+    "build": "yarn build:contract && yarn build:circuit",
+    "build:contract": "hardhat compile",
     "build:circuit": "yarn build:circuit:Invitation && yarn build:circuit:MerkleTree",
     "build:circuit:Invitation": "./executeCeremony.sh Invitation",
     "build:circuit:MerkleTree": "./executeCeremony.sh MerkleTree",
