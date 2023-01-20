@@ -12,7 +12,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { zkycClient } from "../helpers/client";
 
-describe.only("ZKYC Unit Test", function () {
+describe("ZKYC Unit Test", function () {
   let hasherContract: IHasher;
   let zkycContract: ZKYC;
   let zkycVerifierContract: InvitationVerifier;
@@ -75,10 +75,8 @@ describe.only("ZKYC Unit Test", function () {
         [invi0.invitation, invi1.invitation]
       );
 
-      const proof = await client.join(invi0.nullifier);
-      await zkycContract
-        .connect(user0)
-        .join(proof.proof, proof.root, proof.nullifierHash);
+      const letter = await client.join(user0.address, invi0.nullifier);
+      await zkycContract.connect(user0).join(letter);
 
       expect(await zkycContract.balanceOf(user0.address)).to.be.eq(1);
     });
@@ -93,14 +91,11 @@ describe.only("ZKYC Unit Test", function () {
         [invi0.invitation, invi1.invitation]
       );
 
-      const proof = await client.join(invi0.nullifier);
-      const wrongNullifierHash = await hasher.nullifierHash(invi1.nullifier, 0);
+      const letter = await client.join(user0.address, invi0.nullifier);
+      // corrupt nullifierHash
+      letter.nullifierHash = await hasher.nullifierHash(invi1.nullifier, 0);
 
-      await expect(
-        zkycContract
-          .connect(user0)
-          .join(proof.proof, proof.root, wrongNullifierHash)
-      ).to.be.reverted;
+      await expect(zkycContract.connect(user0).join(letter)).to.be.reverted;
     });
 
     it("revert case : wrong root", async () => {
@@ -113,14 +108,11 @@ describe.only("ZKYC Unit Test", function () {
         [invi0.invitation, invi1.invitation]
       );
 
-      const proof = await client.join(invi0.nullifier);
-      const wrongRoot = await generateNullifier();
+      const letter = await client.join(user0.address, invi0.nullifier);
+      // corrupt nullifierHash
+      letter.root = num2bytes32(await generateNullifier());
 
-      await expect(
-        zkycContract
-          .connect(user0)
-          .join(proof.proof, num2bytes32(wrongRoot), proof.nullifierHash)
-      ).to.be.reverted;
+      await expect(zkycContract.connect(user0).join(letter)).to.be.reverted;
     });
 
     it("revert case : already invited", async () => {
@@ -133,17 +125,11 @@ describe.only("ZKYC Unit Test", function () {
         [invi0.invitation, invi1.invitation]
       );
 
-      const proof = await client.join(invi0.nullifier);
+      const letter = await client.join(user0.address, invi0.nullifier);
 
-      await zkycContract
-        .connect(user0)
-        .join(proof.proof, proof.root, proof.nullifierHash);
+      await zkycContract.connect(user0).join(letter);
 
-      await expect(
-        zkycContract
-          .connect(user0)
-          .join(proof.proof, proof.root, proof.nullifierHash)
-      ).to.be.reverted;
+      await expect(zkycContract.connect(user0).join(letter)).to.be.reverted;
     });
   });
 
@@ -160,11 +146,9 @@ describe.only("ZKYC Unit Test", function () {
         [invi.invitation]
       );
 
-      const proof = await client.join(invi.nullifier);
+      const letter = await client.join(user0.address, invi.nullifier);
 
-      await zkycContract
-        .connect(user0)
-        .join(proof.proof, proof.root, proof.nullifierHash);
+      await zkycContract.connect(user0).join(letter);
     });
 
     it("멤버인 user0가 user1을 초대", async () => {
@@ -172,11 +156,9 @@ describe.only("ZKYC Unit Test", function () {
 
       await zkycContract.connect(user0).invite(invi.invitation);
 
-      const join = await client.join(invi.nullifier);
+      const letter = await client.join(user1.address, invi.nullifier);
 
-      await zkycContract
-        .connect(user1)
-        .join(join.proof, join.root, join.nullifierHash);
+      await zkycContract.connect(user1).join(letter);
 
       expect(await zkycContract.balanceOf(user1.address)).to.be.eq(1);
     });

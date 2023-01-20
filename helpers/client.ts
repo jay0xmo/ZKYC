@@ -23,9 +23,10 @@ export class zkycClient {
   /**
    * `ZKYC.join` TX에 필요한 파라미터 생성
    *
+   * @param invitee
    * @param nullifier
    */
-  async join(nullifier: BigNumberish) {
+  async join(invitee: string, nullifier: BigNumberish) {
     // 1. 컨트랙트로부터 데이터를 받아와, 머클트리 구성
     //    ( invitation 정보를 순서대로 넣어서, 현재 컨트랙트의 머클트리 상태와 동기화 )
     const merkleTree = await this.syncTree();
@@ -51,6 +52,7 @@ export class zkycClient {
       nullifier,
       nullifierHash,
       root,
+      invitee,
       pathElements,
       pathIndices,
     });

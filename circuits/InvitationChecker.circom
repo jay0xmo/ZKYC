@@ -26,4 +26,8 @@ template InvitationChecker(levels) {
         tree.pathElements[i] <== pathElements[i];
         tree.pathIndices[i] <== pathIndices[i];
     }
+
+    // Add hidden signals to make sure that tampering with invitee will invalidate the snark proof
+    signal inviteeSquare;
+    inviteeSquare <== invitee * invitee;
 }

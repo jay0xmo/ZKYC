@@ -5,6 +5,7 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "./interfaces/IVerifier.sol";
 import "./MerkleTreeWithHistory.sol";
+import "./interfaces/IZKYC.sol";
 
 //
 //  _______                    _    _                   _          _                _     _           _              ______ _       _    _
@@ -18,10 +19,7 @@ import "./MerkleTreeWithHistory.sol";
 //   Zero Knowledge Yacht Club
 //   - We don't know who invite you, But one of us must have invited you.
 //   - it's enough. Welcome to ZKYC!
-contract ZKYC is ERC721Upgradeable, MerkleTreeWithHistory {
-
-    event Join(address owner, bytes32 nullifierHash);
-    event Invitation(address owner, bytes32 invitation);
+contract ZKYC is ERC721Upgradeable, MerkleTreeWithHistory, IZKYC {
 
     IVerifier private verifier;
     uint256 public MAX_INVITATIONS = 2;
@@ -47,42 +45,38 @@ contract ZKYC is ERC721Upgradeable, MerkleTreeWithHistory {
     }
 
     // @notice The person receiving the invitation must prove that they have the invitation by proof.
-    function join(
-        IVerifier.Proof calldata proof,
-        bytes32 root,
-        bytes32 nullifierHash
-    ) external {
-        require(!nullifierHashes[nullifierHash], "This invitation has been already used");
-        require(isKnownRoot(root), "can't find your merkle root");
+    function join(InvitationLetter calldata letter) external {
+        require(!nullifierHashes[letter.nullifierHash], "This invitation has been already used");
+        require(isKnownRoot(letter.root), "can't find your merkle root");
         require(!isMember(msg.sender), "already invites");
         require(verifier.verifyProof(
-                proof.a,
-                proof.b,
-                proof.c,
+                letter.proof.a,
+                letter.proof.b,
+                letter.proof.c,
                 [
-                uint256(root),
-                uint256(nullifierHash)
+                uint256(letter.root),
+                uint256(letter.nullifierHash),
+                addressToUInt256(msg.sender)
                 ]
             ), "invalid proof");
 
-        nullifierHashes[nullifierHash] = true;
+        nullifierHashes[letter.nullifierHash] = true;
         totalSupply += 1;
         _safeMint(msg.sender, totalSupply);
 
-        emit Join(msg.sender, nullifierHash);
+        emit Join(msg.sender, letter.nullifierHash);
     }
 
     /// @notice Members must create `invitation` before inviting new members.
-    ///         invitation = poseidonHash(secret, nullifier)
-    ///         Before inviting, share the secret and nullifier to the invitee
-    function invite(bytes32 _invitation) external {
+    ///         invitationCode = poseidonHash(invitation, 0)
+    function invite(bytes32 invitationCode) external {
         require(isMember(msg.sender), "msg.sender isn't our member");
         require(numToInvite[msg.sender] < MAX_INVITATIONS, "exceed maximum invitation");
 
-        _insert(_invitation);
+        _insert(invitationCode);
         numToInvite[msg.sender] += 1;
 
-        emit Invitation(msg.sender, _invitation);
+        emit Invitation(msg.sender, invitationCode);
     }
 
     function _beforeTokenTransfer(address from, address, uint256, uint256) internal override pure {
@@ -100,5 +94,9 @@ contract ZKYC is ERC721Upgradeable, MerkleTreeWithHistory {
 
     function isMember(address member) public view returns (bool) {
         return balanceOf(member) > 0;
+    }
+
+    function addressToUInt256(address adr) internal pure returns (uint256) {
+        return uint256(uint160(adr));
     }
 }
