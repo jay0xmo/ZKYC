@@ -1,8 +1,7 @@
 import { generateZeroValue } from "./utils";
 import { SEED_PHRASE } from "./constants";
 import { BigNumberish } from "ethers";
-import { ZKYC } from "../typechain-types";
-import { generateHasher, PoseidonHasher } from "./poseidon";
+import { PoseidonHasher } from "./poseidon";
 
 class JsStorage {
   constructor(public db: { [key: string]: BigNumberish } = {}) {}
@@ -237,23 +236,4 @@ export class MerkleTree {
     }
     return -1;
   }
-}
-
-/**
- * create Merkle Tree by importing information from ZKYC
- * @param zkyc
- */
-export async function loadMerkleTree(zkyc: ZKYC) {
-  const merkleTree = new MerkleTree(
-    await zkyc.levels(),
-    await generateHasher(),
-    await zkyc.SEED_PHRASE()
-  );
-
-  const total = await zkyc.totalInvitations().then((e) => e.toNumber());
-  for (let i = 0; i < total; i++) {
-    await zkyc.invitation(i).then((e) => merkleTree.insert(e));
-  }
-
-  return merkleTree;
 }

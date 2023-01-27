@@ -17,9 +17,9 @@ export class Groth16Prover {
     this.zkeyPath = zkeyPath;
   }
 
-  async prove(witness: any): Promise<Groth16Proof> {
+  async prove(input: any): Promise<Groth16Proof> {
     const { proof } = await groth16.fullProve(
-      witness,
+      input,
       this.wasmPath,
       this.zkeyPath
     );

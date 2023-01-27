@@ -27,7 +27,7 @@ export class zkycClient {
    * @param nullifier
    */
   async join(invitee: string, nullifier: BigNumberish) {
-    // 1. 컨트랙트로부터 데이터를 받아와, 머클트리 구성
+    // 1. 컨트랙트로부터 데이터를 받아와서 머클트리 구성
     //    ( invitation 정보를 순서대로 넣어서, 현재 컨트랙트의 머클트리 상태와 동기화 )
     const merkleTree = await this.syncTree();
 
@@ -75,7 +75,7 @@ export class zkycClient {
     //    Inviter와 Invitee만 알아야 합니다.
     const nullifier = generateNullifier();
 
-    // 2.
+    // 2. invitation Code을 생성합니다.
     const invitation = hasher.commitmentHash(nullifier);
 
     return {
